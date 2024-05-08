@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Card Details</title>
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Space+Grotesk:wght@300..700&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: "Space Grotesk", sans-serif;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        ::-webkit-scrollbar {
+            visibility: hidden;
+            opacity: 0;
+            width: 0;
+        }
+
+
+    </style>
+</head>
+
+<body class="grid place-items-center bg-white">
+    <img class="absolute top-0 left-0" src="bg-main-desktop.png" />
+    <div id="app" class="w-8/12 px-15">
+        <div class="flex flex-row gap-24 w-full">
+            <div class="flex flex-col gap-10 w-1/2">
+                <div class="w-[380px] relative">
+                    <img class="" src="bg-card-front.png" width="380" alt="">
+                    <div class="text-white absolute top-0 left-0 p-6 w-[380px]">
+                        <div class="flex flex-col">
+                            <img src="card-logo.svg" width="70">
+                            <p class="text-[28px] mt-[55px]" v-if="confirm"> {{ cardNumber }} </p>
+                            <p class="text-[28px] mt-[55px]" v-else> 0000 0000 0000 0000 </p>
+                            <div class="flex flex-row justify-between">
+                                <p class="text-xs mt-2 uppercase" v-if="confirm">  {{ cardName }} </p>
+                                <p class="text-xs mt-2 uppercase" v-else>  John Doe </p>
+                                <p class="text-xs mt-2" v-if="confirm"> {{ expDateM.toString().padStart(2, '0') }}/{{ expDateY.toString().padStart(2, '0') }} </p>
+                                <p class="text-xs mt-2"v-else> 00/00 </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-[380px] relative ml-20">
+                    <img class="" src="bg-card-back.png" width="380" alt="">
+                    <div class="text-white absolute top-0 left-0 p-6">
+                        <p class="mt-[68px] ml-[275px] text-sm" v-if="confirm"> {{ cvc }} </p>
+                        <p class="mt-[68px] ml-[275px] text-sm" v-else> 000 </p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-center w-1/2 pr-20">
+                <form @submit.prevent="confirmCard">
+                    <div class="flex flex-col justify-center gap-5">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-xs font-medium text-zinc-700">CARDHOLDER NAME</label>
+                            <div class="flex flex-col gap-1">
+                                <input type="text" placeholder="e.g. John Doe" class="border rounded-lg text-sm py-2 px-4 w-full text-zinc-800 focus:border-zinc-600 focus:outline-none" :class="errorsBorder.cardName ? 'border-red-600' : 'border-zinc-300'" v-model="cardName">
+                                <p class="text-xs text-red-600" v-if="errors.cardName">{{ errors.cardName }}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-xs font-medium text-zinc-700">CARD NUMBER</label>
+                            <div class="flex flex-col gap-1">
+                                <input type="text" placeholder="e.g. 1234 5678 9123 0000" class="border rounded-lg text-sm py-2 px-4 w-full text-zinc-800 focus:border-zinc-600 focus:outline-none" :class="errorsBorder.cardNumber ? 'border-red-600' : 'border-zinc-300'" v-model="cardNumber" @input="formatCardNumber" >
+                                <p class="text-xs text-red-600" v-if="errors.cardNumber">{{ errors.cardNumber }}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-row gap-4 w-full">
+                            <div class="flex flex-col gap-2 w-1/2">
+                                <label class="text-xs font-medium text-zinc-700">EXP. DATE (MM/YY)</label>
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex flex-row gap-2">
+                                        <input type="text" placeholder="MM" class="border rounded-lg text-sm py-2 px-4 w-full text-zinc-800 focus:border-zinc-600 focus:outline-none" :class="errorsBorder.expDateM ? 'border-red-600' : 'border-zinc-300'" v-model="expDateM" onkeypress='return event.charCode >= 48 && event.charCode <= 57' maxlength="2">
+                                        <input type="text" placeholder="YY" class="border rounded-lg text-sm py-2 px-4 w-full text-zinc-800 focus:border-zinc-600 focus:outline-none" :class="errorsBorder.expDateY ? 'border-red-600' : 'border-zinc-300'" v-model="expDateY" onkeypress='return event.charCode >= 48 && event.charCode <= 57' maxlength="2">
+                                    </div>
+                                    <p class="text-xs text-red-600" v-if="errors.expDate">{{ errors.expDate }}</p>
+                                </div>
+
+                            </div>
+                            <div class="flex flex-col gap-2 w-1/2">
+                                <label class="text-xs font-medium text-zinc-700">CVC</label>
+                                <div class="flex flex-col gap-1">
+                                    <input type="text" placeholder="e.g. 123" class="border rounded-lg text-sm py-2 px-4 w-full text-zinc-800 focus:border-zinc-600 focus:outline-none" :class="errorsBorder.cvc ? 'border-red-600' : 'border-zinc-300'" v-model="cvc" onkeypress='return event.charCode >= 48 && event.charCode <= 57' maxlength="3">
+                                    <p class="text-xs text-red-600" v-if="errors.cvc">{{ errors.cvc }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="bg-gray-800 rounded-md font-medium mt-5 text-sm py-3 px-4 w-full text-white hover:bg-gradient-to-r from-[#6246FC] to-[#610596]">Confirm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Vue.createApp({
+            data() {
+                return {
+                    cardName: '',
+                    cardNumber: '',
+                    expDateM: '',
+                    expDateY: '',
+                    cvc: '',
+                    errors: {
+                        cardName: '',
+                        cardNumber: '',
+                        expDate: '',
+                        cvc: ''
+                    },
+                    errorsBorder: {
+                        cardName: false,
+                        cardNumber: false,
+                        expDateM: false,
+                        expDateY: false,
+                        cvc: false
+                    },
+                    confirm: ''
+                };
+            },
+
+            methods: {
+                formatCardNumber(event) {
+                    let value = event.target.value.replace(/\D/g, '');
+                    value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+                    this.cardNumber = value.trim().slice(0, 19);
+                },
+
+                confirmCard() {
+                    this.resetError();
+
+                    const fields = [
+                        {   
+                            name: 'cardName',
+                            value: this.cardName
+                        },
+                        {   
+                            name: 'cardNumber',
+                            value: this.cardNumber
+                        },
+                        {   
+                            name: 'expDateM',
+                            value: this.expDateM
+                        },
+                        {   
+                            name: 'expDateY',
+                            value: this.expDateY
+                        },
+                        {   
+                            name: 'cvc',
+                            value: this.cvc
+                        },
+                    ];
+
+                    fields.forEach((field) => {
+                        const errorMessage = this.validateField(field.name, field.value);
+                        this.setFieldError(field.name, errorMessage);
+                    });
+
+                    if (!this.errorsBorder.expDateM && !this.errorsBorder.expDateM) {
+                        if (this.expDateM > 31 || this.expDateY > 12) {
+                            if (this.expDateM > 31) {
+                                this.errorsBorder.expDateM = !this.errorsBorder.expDateM
+                            } 
+                            if (this.expDateY > 12) {
+                                this.errorsBorder.expDateY = !this.errorsBorder.expDateY
+                            } 
+                            this.setFieldError('expDate', 'Must be a valid date!');
+                        }
+                    }
+                    
+                    values = Object.values(this.errorsBorder);
+                    this.confirm = values.every(value => !value);
+
+                },
+
+                validateField(fieldName, value) {
+                    if (!value) return "Can't be blank";
+
+                    if (fieldName == 'cardNumber' || fieldName == 'cvc') {
+                        let errorMessage = ""
+    
+                        const validation = {
+                            cardNumber: (value) => {
+                                if (value.length < 19) errorMessage = "Must be a valid card number!"; 
+                            },
+                            cvc: (value) => {
+                                if (value.length < 3) errorMessage = "Must be a valid cvc!"
+                            },
+                        }
+                        
+                        validation[fieldName](value);
+    
+                        return errorMessage;
+                    }
+                },
+
+                setFieldError(fieldName, message) {
+                    if (fieldName.includes('expDate')) {
+                        this.errors['expDate'] = message;
+                    } else {
+                        this.errors[fieldName] = message;
+                    }
+                    this.errorsBorder[fieldName] = !!message;
+                },
+
+                resetError() {
+                    this.errors = {};
+                    const fields = ["cardName", "cardNumber", "expDateM", "expDateY", "cvc"];
+                    fields.forEach((field) => this.errorsBorder[field] = false);
+                },
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
